@@ -1102,7 +1102,12 @@ a {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
-  object-fit: cover;
+  /* contain, not cover: these are screenshots of real UI (headers, edges,
+     small text) — cropping to fill would cut off exactly the parts that
+     make it recognizable. A letterboxed full screenshot reads better than
+     a confidently-cropped fragment of one. */
+  object-fit: contain;
+  background: rgba(5, 7, 13, 0.3);
   border-radius: 12px;
   border: 1px solid var(--line);
   margin-bottom: 1.25rem;
@@ -1211,6 +1216,17 @@ a {
   background: rgba(5, 7, 13, 0.4);
   transition: border-color 0.35s var(--ease), background-color 0.35s var(--ease),
     transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+}
+
+.current__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: rgba(5, 7, 13, 0.3);
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  margin-bottom: 0.65rem;
 }
 
 .current__item:hover {

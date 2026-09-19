@@ -75,9 +75,14 @@ function renderProjects() {
 function renderCurrent() {
   const root = document.getElementById("currentList");
   root.innerHTML = PORTFOLIO_DATA.currentlyWorking
-    .map(
-      (c, i) => `
-      <div class="current__item reveal" style="--stagger-index: ${i}">
+    .map((c, i) => {
+      // Same clickable-card pattern as renderProjects: the whole item
+      // becomes an <a> when it has a link, plain otherwise.
+      const tag = c.github ? "a" : "div";
+      const linkAttrs = c.github ? ` href="${c.github}" target="_blank" rel="noopener"` : "";
+      return `
+      <${tag} class="current__item reveal" style="--stagger-index: ${i}"${linkAttrs}>
+        ${c.image ? `<img class="current__image" src="${c.image}" alt="${c.title} screenshot" loading="lazy" />` : ""}
         <div class="current__item-head">
           <span class="current__number">${c.number}</span>
           <span class="current__status">${c.status}</span>
@@ -85,8 +90,8 @@ function renderCurrent() {
         <h3 class="current__title">${c.title}</h3>
         <span class="current__category">${c.category}</span>
         <p class="current__desc">${c.description}</p>
-      </div>`
-    )
+      </${tag}>`;
+    })
     .join("");
 }
 

@@ -93,6 +93,15 @@ const PORTFOLIO_DATA = {
       tech: ["Python", "Data Analysis", "HTML"],
       github: "https://github.com/nishik2811-cell/AQI_Prediction",
       demo: null,
+      image: "assets/aqi-screenshot.png",
+    },
+    {
+      name: "Portfolio — Night World Edition",
+      description:
+        "An interactive night-world themed developer portfolio: a custom cat mascot wanders floating platforms under a starlit sky, with cinematic scroll-based section transitions throughout.",
+      tech: ["HTML", "CSS", "JavaScript"],
+      github: null,
+      demo: "https://portfolio-formal-kappa.vercel.app/",
       image: null,
     },
   ],
@@ -105,6 +114,8 @@ const PORTFOLIO_DATA = {
       description:
         "A prototype platform where users trade skills instead of money — pick to teach for pay, pay to learn, or swap skills with no money involved. Includes a matching algorithm that scores compatibility (0–100%) using skill alignment, availability, budget fit, and shared interests, plus a dashboard, searchable directory, and match rankings. Currently a client-side prototype (HTML/CSS/JS) running on mock data — auth, persistence, and real messaging are next.",
       status: "Building",
+      github: "https://github.com/nishik2811-cell/SkillSwap",
+      image: "assets/skillswap-screenshot.png",
     },
     {
       number: "02",
