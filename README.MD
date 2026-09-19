@@ -7,13 +7,13 @@ A personal developer portfolio for **Nishita Kumari**, a B.Tech student in Mathe
 The page is a single scroll experience, in this order:
 
 1. **Hero** — name, tagline, and primary CTAs (Explore work / Resume)
-2. **About** — a short statement plus a few quick facts
+2. **About** — a short personal statement plus a few quick facts
 3. **Cinematic interlude** — a full-bleed breathing moment between About and Education
-4. **Education** — academic background
-5. **Projects** — ARGUS, AQI Predictor, Sanchay
-6. **Currently Working On** — Amrosia, Sanchay, and ongoing DSA/C++ practice
-7. **Experience & Activities**
-8. **Tech Stack** — languages, AI/ML tools, and development tools
+4. **Education** — JIIT (B.Tech, Mathematics & Computing), plus senior/secondary schooling
+5. **Projects** — ARGUS, AQI Prediction, and this portfolio's own "Night World Edition" build
+6. **Currently Working On** — SkillSwap, a co-authored research book chapter, and ongoing DSA/C++ practice
+7. **Experience & Activities** — AIML Hub and DICE Hub at JIIT
+8. **Tech Stack** — languages, frontend, data/ML, database, dev tools, and design tools
 9. **Contact**
 
 ## Design & interaction
@@ -21,6 +21,7 @@ The page is a single scroll experience, in this order:
 - A single persistent video (`frieren.mp4`) plays behind the whole page, muted/looped/autoplaying — it's never seeked or scrubbed. An `IntersectionObserver` swaps a `body[data-scene]` attribute as each section scrolls into view, which drives CSS-only crossfades on the overlay darkness and video brightness per section.
 - Each section scales/fades in and out as it enters and leaves the viewport (a cinematic "depth" effect), implemented with the native `animation-timeline: view()` CSS API where supported, with a small JavaScript fallback (scroll + `requestAnimationFrame`) elsewhere.
 - Small caption text (section numbers, eyebrows, stat labels) adapts its color to the video's live brightness, sampled from a tiny offscreen canvas.
+- Project and "Currently Working On" cards become clickable links straight to their GitHub repo (or live demo) whenever one is set in `data.js`, and can optionally show a full, uncropped screenshot (`object-fit: contain`, so UI screenshots never get cut off at the edges).
 - A custom trailing cursor, magnetic buttons, and mouse-reactive lighting are enabled only on fine-pointer (non-touch) devices.
 - Respects `prefers-reduced-motion`: continuous animation and the custom cursor are disabled, entrance transitions become instant.
 - Responsive down to small phone widths, including a landscape-phone-specific hero layout.
@@ -37,18 +38,18 @@ styles.css    All styling, animation, and responsive rules
 script.js     Content rendering, scroll/scene logic, cursor, interactions
 data.js       All editable content (education, projects, experience, contact info)
 frieren.mp4   Background video
+assets/       Project/work screenshots referenced from data.js
 ```
 
 ## Editing content
 
-Everything user-facing — education entries, project descriptions, tech stack items, experience, and contact links — lives in `data.js`. Edit the values there; nothing else needs to change.
+Everything user-facing — education entries, project descriptions, tech stack items, experience, and contact links — lives in `data.js`. Edit the values there; nothing else needs to change. Each `projects` and `currentlyWorking` entry accepts an optional `image` (a path under `assets/`) and `github`/`demo` link — set either link and the whole card becomes clickable.
 
 **Known placeholders still to fill in:**
 
 - `resumeUrl` in `data.js` points to `resume.pdf` — drop your actual resume PDF in the project root at that filename to make the "Resume" links work.
-- CGPA and secondary-school details in `education` are placeholders.
-- `contact.email`, `contact.github`, and `contact.linkedin` are placeholders.
-- Several `experience` entries (company/hackathon/organization names) are placeholders pending real details.
+- Several `projects`/`currentlyWorking` entries (ARGUS, the book chapter, DSA/C++) don't have a screenshot yet — set their `image` field once one exists.
+- The book-chapter and DSA/C++ "Currently Working On" entries have no link yet (no public repo/page to point to).
 
 ## Running locally
 
