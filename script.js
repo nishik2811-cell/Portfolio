@@ -47,9 +47,16 @@ function renderStack() {
 function renderProjects() {
   const root = document.getElementById("projectsList");
   root.innerHTML = PORTFOLIO_DATA.projects
-    .map(
-      (p, i) => `
-      <article class="project reveal" style="--stagger-index: ${i}">
+    .map((p, i) => {
+      // The whole card becomes the click target when a link exists (an
+      // <a>, not a plain <article>) — no separate "Code" line needed.
+      // Falls back to a plain, non-clickable card when neither is set.
+      const link = p.github || p.demo;
+      const tag = link ? "a" : "article";
+      const linkAttrs = link ? ` href="${link}" target="_blank" rel="noopener"` : "";
+      return `
+      <${tag} class="project reveal" style="--stagger-index: ${i}"${linkAttrs}>
+        ${p.image ? `<img class="project__image" src="${p.image}" alt="${p.name} screenshot" loading="lazy" />` : ""}
         <div class="project__head">
           <span class="project__index" aria-hidden="true">Project 0${i + 1}</span>
         </div>
@@ -60,16 +67,8 @@ function renderProjects() {
             ? `<ul class="project__tech">${p.tech.map((t) => `<li>${t}</li>`).join("")}</ul>`
             : ""
         }
-        ${
-          p.github || p.demo
-            ? `<div class="project__links">
-                ${p.github ? `<a href="${p.github}" target="_blank" rel="noopener">Code <span>→</span></a>` : ""}
-                ${p.demo ? `<a href="${p.demo}" target="_blank" rel="noopener">Live demo <span>→</span></a>` : ""}
-              </div>`
-            : ""
-        }
-      </article>`
-    )
+      </${tag}>`;
+    })
     .join("");
 }
 
