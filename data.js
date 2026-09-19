@@ -81,10 +81,7 @@ const PORTFOLIO_DATA = {
       tech: ["C++", "OOP", "STL", "File I/O"],
       github: "https://github.com/nishik2811-cell/ARGUS",
       demo: null,
-      // Drop a real screenshot in the project root (or an assets/ folder)
-      // and point this at it — e.g. "argus-screenshot.png". Left null
-      // since no actual screenshot exists yet to reference.
-      image: null,
+      image: "assets/argus-screenshot.png",
     },
     {
       name: "AQI Prediction",
@@ -102,7 +99,7 @@ const PORTFOLIO_DATA = {
       tech: ["HTML", "CSS", "JavaScript"],
       github: null,
       demo: "https://portfolio-formal-kappa.vercel.app/",
-      image: null,
+      image: "assets/portfolio-nightworld-screenshot.png",
     },
   ],
 

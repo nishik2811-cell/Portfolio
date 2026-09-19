@@ -48,8 +48,7 @@ Everything user-facing — education entries, project descriptions, tech stack i
 **Known placeholders still to fill in:**
 
 - `resumeUrl` in `data.js` points to `resume.pdf` — drop your actual resume PDF in the project root at that filename to make the "Resume" links work.
-- Several `projects`/`currentlyWorking` entries (ARGUS, the book chapter, DSA/C++) don't have a screenshot yet — set their `image` field once one exists.
-- The book-chapter and DSA/C++ "Currently Working On" entries have no link yet (no public repo/page to point to).
+- The book-chapter and DSA/C++ "Currently Working On" entries have no screenshot or link yet (no public repo/page to point to).
 
 ## Running locally
 
