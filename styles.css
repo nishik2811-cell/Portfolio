@@ -32,15 +32,15 @@
    script.js updates body[data-scene] on section-enter (IntersectionObserver).
    Nothing here touches playback, so there is nothing to cause the seeking
    lag the scroll-scrubbed version had. */
-body[data-scene="hero"] { --overlay-opacity: 0.56; --video-brightness: 0.55; }
-body[data-scene="about"] { --overlay-opacity: 0.66; --video-brightness: 0.52; }
-body[data-scene="education"] { --overlay-opacity: 0.68; --video-brightness: 0.49; }
-body[data-scene="interlude"] { --overlay-opacity: 0.24; --video-brightness: 0.87; }
-body[data-scene="stack"] { --overlay-opacity: 0.76; --video-brightness: 0.45; }
-body[data-scene="projects"] { --overlay-opacity: 0.66; --video-brightness: 0.51; }
-body[data-scene="current"] { --overlay-opacity: 0.72; --video-brightness: 0.47; }
-body[data-scene="experience"] { --overlay-opacity: 0.72; --video-brightness: 0.47; }
-body[data-scene="contact"] { --overlay-opacity: 0.56; --video-brightness: 0.5; }
+body[data-scene="hero"] { --overlay-opacity: 0.52; --video-brightness: 0.6; }
+body[data-scene="about"] { --overlay-opacity: 0.62; --video-brightness: 0.57; }
+body[data-scene="education"] { --overlay-opacity: 0.64; --video-brightness: 0.54; }
+body[data-scene="interlude"] { --overlay-opacity: 0.22; --video-brightness: 0.89; }
+body[data-scene="stack"] { --overlay-opacity: 0.72; --video-brightness: 0.5; }
+body[data-scene="projects"] { --overlay-opacity: 0.62; --video-brightness: 0.56; }
+body[data-scene="current"] { --overlay-opacity: 0.68; --video-brightness: 0.52; }
+body[data-scene="experience"] { --overlay-opacity: 0.68; --video-brightness: 0.52; }
+body[data-scene="contact"] { --overlay-opacity: 0.52; --video-brightness: 0.55; }
 
 * {
   box-sizing: border-box;
@@ -365,10 +365,7 @@ a {
   gap: 0.6rem;
   width: fit-content;
   font-size: 0.85rem;
-  /* Same adaptive color as the tagline — this chip only ever appears in
-     the hero, so it can use the variable directly without needing the
-     :not(.is-solid) scoping the nav links need. */
-  color: var(--hero-text-color-secondary, var(--text-label));
+  color: var(--text-label);
   transition: color 0.6s linear;
   margin: 0 0 1.5rem;
   padding: 0.4rem 0.9rem 0.4rem 0.7rem;
@@ -414,16 +411,15 @@ a {
   animation-delay: calc(0.25s + var(--i) * 0.15s);
 }
 
-/* A subtle two-stop gradient fill on the name — the flat adaptive color
-   read as plain, so this deepens slightly across the letters instead,
-   using the same dark/light colors already driving everything else (see
-   --hero-text-color-deep in initAdaptiveHeroContrast, script.js) rather
-   than an unrelated hue. Gated behind @supports so the plain color above
-   remains a fully legible fallback where background-clip: text isn't
-   available, instead of invisible transparent text. */
+/* A subtle two-stop gradient fill on the name — the flat accent color read
+   as plain, so this deepens slightly across the letters instead, staying
+   in the same icy-blue family rather than an unrelated hue. Gated behind
+   @supports so the plain color above remains a fully legible fallback
+   where background-clip: text isn't available, instead of invisible
+   transparent text. */
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .hero__name-word {
-    background-image: linear-gradient(100deg, var(--accent) 15%, var(--accent) 100%);
+    background-image: linear-gradient(100deg, var(--accent) 15%, #84a0d6 100%);
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
@@ -507,7 +503,7 @@ a {
   align-items: center;
   gap: 0.75rem;
   font-size: 0.8rem;
-  color: var(--hero-text-color-secondary, var(--text-label));
+  color: var(--text-label);
   transition: color 0.6s linear;
 }
 

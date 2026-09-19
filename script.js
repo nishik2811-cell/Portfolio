@@ -299,79 +299,40 @@ const playResult = video.play();
 if (playResult && playResult.catch) playResult.catch(() => {});
 
 // ---------------------------------------------------------------------------
-// Adaptive video-aware text contrast, two different ways:
+// Adaptive video-aware --text-label — small captions scattered across every
+// section (section numbers, eyebrows, stat captions) fade toward a lighter
+// or darker blue as the video plays behind them, so they stay readable
+// whether that moment of the scene is dark or bright. (The hero name/
+// tagline used to run a similar live system too, but it went through
+// several rounds of glowing/choppy/too-dark/too-black problems — it's now
+// a single fixed --accent color in styles.css instead, which is simpler
+// and was the actual fix.)
 //
-// - Hero name/tagline: a fixed, known rhythm timed to video.currentTime —
-//   a moderate dark tone for nearly the whole loop, easing to a light one
-//   only in its final couple of seconds (see HERO_TRANSITION_TAIL below).
-//   Deliberately not sampled: reading actual pixel brightness every tick
-//   reacted to real per-frame noise (motion, grain) and read as the text
-//   restlessly glowing/pulsing rather than calmly adapting, whereas a
-//   clock-driven transition is inherently steady. Never touches playback
-//   itself (no currentTime is ever *set*, only read).
-//
-// - --text-label (small captions scattered across every section — section
-//   numbers, eyebrows, stat captions): still a genuine per-frame read,
-//   since there's no single fixed spot a clock-based rule could target.
-//   Draws the video into a tiny (32×18) offscreen canvas — cheap
-//   regardless of the video's real resolution — and averages its
-//   luminance. That raw sample is noisy frame-to-frame, so it's smoothed
-//   with an exponential moving average before being mapped to a color;
-//   the CSS `transition` on every consumer smooths it a second time.
-//
-// Both are throttled to ~7.5/sec (setInterval, not rAF).
+// Draws the video into a tiny (32×18) offscreen canvas — cheap regardless
+// of the video's real resolution — and averages its luminance. That raw
+// sample is noisy frame-to-frame, so it's smoothed with an exponential
+// moving average before being mapped to a color; the CSS `transition` on
+// every consumer smooths it a second time. Throttled to ~7.5/sec
+// (setInterval, not rAF).
 // ---------------------------------------------------------------------------
 
-(function initAdaptiveHeroContrast() {
-  // The hero name/tagline hold a moderate dark tone for nearly the whole
-  // video loop, then ease to a light one only in its final couple of
-  // seconds — a deliberate, predictable rhythm timed to video.currentTime
-  // rather than a continuous per-frame brightness read. The earlier
-  // version sampled the video's actual pixels every tick, which reacted
-  // to real but small frame-to-frame brightness noise (motion, grain) and
-  // read as the text restlessly glowing/pulsing rather than calmly
-  // adapting; a fixed, known transition window is inherently steady
-  // since nothing but the clock drives it.
-  const HERO_TRANSITION_TAIL = 2.5; // seconds before loop-end the ease-to-light starts
-
-  // The dark state stays moderate rather than near-black ("don't go very
-  // dark") so it still reads as a legible, sitting-comfortably-dark tone
-  // rather than vanishing into the darkest parts of the frame.
-  const TEXT_DARK_SCENE = [243, 245, 247]; // the light state (last ~2.5s of the loop)
-  const TEXT_BRIGHT_SCENE = [86, 100, 128]; // the dark state (everywhere else) — moderate, not near-black
-  const SECONDARY_DARK_SCENE = [205, 214, 227];
-  const SECONDARY_BRIGHT_SCENE = [100, 112, 136];
-  // A second, independent pair for the name's gradient fill (see
-  // .hero__name-word) — a bit richer/darker than the primary pair at
-  // both ends, so the two gradient stops stay visibly distinct across
-  // the *whole* loop. Nudging off the primary color by a fixed offset
-  // instead would collapse to an invisible one-color gradient whenever
-  // primary sits at (or clamps to) either end of its own range, which is
-  // most of the loop — the flat dark phase lasts far longer than the
-  // brief transition.
-  const TEXT_DARK_SCENE_DEEP = [214, 220, 236];
-  const TEXT_BRIGHT_SCENE_DEEP = [52, 64, 92];
+(function initAdaptiveLabelContrast() {
   // --text-label's static color (#7f9bc0) is a mid-tone blue that can
   // wash out against a bright patch of video with nothing but a text-
   // shadow to help it — these endpoints swap it for something with real
   // contrast at either extreme, while staying in the same blue family.
-  // Deliberately closer together than the hero pair above: this drives
-  // small captions scattered across every section, not one large focal
-  // heading, so a wide, saturated swing read as the label "glowing" and
-  // pulsing rather than quietly adapting.
+  // Deliberately close together (not a wide, saturated swing): this drives
+  // small captions scattered across every section, and a wide swing read
+  // as the label "glowing" and pulsing rather than quietly adapting.
   const LABEL_DARK_SCENE = [148, 168, 202]; // a shade lighter than the old static color
   const LABEL_BRIGHT_SCENE = [55, 68, 94]; // dark, muted navy-blue
 
-  let smoothedGeneral = 0.35; // assume a mid-dark scene before the first real sample
-  // The label reads from the *whole* frame, so frame-to-frame noise
-  // (motion, particles, compression) averages out less on its own than
-  // it used to for the hero's old narrow crop — a slow factor here is
-  // what actually keeps it calm.
-  const SMOOTHING_GENERAL = 0.035;
+  let smoothed = 0.35; // assume a mid-dark scene before the first real sample
+  // Reads from the *whole* frame, so frame-to-frame noise (motion,
+  // particles, compression) averages out less on its own — a slow factor
+  // here is what actually keeps it calm.
+  const SMOOTHING = 0.035;
 
-  // A tiny offscreen canvas is still used, just for --text-label's
-  // full-frame brightness read below — the hero name/tagline no longer
-  // touch the canvas at all (see HERO_TRANSITION_TAIL above).
   const canvas = document.createElement("canvas");
   const SAMPLE_W = 32;
   const SAMPLE_H = 18;
@@ -384,113 +345,32 @@ if (playResult && playResult.catch) playResult.catch(() => {});
     return Math.round(a + (b - a) * t);
   }
 
-  // Smoothstep: eases in and out of the transition window rather than
-  // moving at a constant rate the instant it starts, so the shift into
-  // (and the hold at) the light state feels settled rather than linear.
-  function smoothstep(t) {
-    return t * t * (3 - 2 * t);
-  }
-
   function sampleAndApply() {
     if (video.readyState < 2) return;
 
-    // Deterministic, time-based rather than sampled: dark for the whole
-    // loop except its last HERO_TRANSITION_TAIL seconds, which ease to
-    // light. Falls back to "stay dark" if duration isn't known yet or is
-    // too short to fit a real transition.
-    const duration = video.duration;
-    let heroT = 0;
-    if (duration && duration > HERO_TRANSITION_TAIL) {
-      const transitionStart = duration - HERO_TRANSITION_TAIL;
-      heroT =
-        video.currentTime <= transitionStart
-          ? 0
-          : smoothstep(
-              Math.min(1, (video.currentTime - transitionStart) / HERO_TRANSITION_TAIL)
-            );
-    }
-    // Downstream math (further below) was written the other way round —
-    // t=0 reads as "text is light, needs a dark rim", t=1 as "text is
-    // dark, needs a light rim" — so heroT (0 = dark text) feeds in
-    // inverted, and the light/dark endpoint lerps below follow suit.
-    const t = 1 - heroT;
-
-    const primary = `rgb(${lerp(TEXT_DARK_SCENE[0], TEXT_BRIGHT_SCENE[0], t)}, ${lerp(TEXT_DARK_SCENE[1], TEXT_BRIGHT_SCENE[1], t)}, ${lerp(TEXT_DARK_SCENE[2], TEXT_BRIGHT_SCENE[2], t)})`;
-    const secondary = `rgb(${lerp(SECONDARY_DARK_SCENE[0], SECONDARY_BRIGHT_SCENE[0], t)}, ${lerp(SECONDARY_DARK_SCENE[1], SECONDARY_BRIGHT_SCENE[1], t)}, ${lerp(SECONDARY_DARK_SCENE[2], SECONDARY_BRIGHT_SCENE[2], t)})`;
-    // The second stop for the name's gradient fill (see .hero__name-word)
-    // — driven by the same t as primary, so it moves in lockstep through
-    // the dark/light transition, just always a bit richer/deeper.
-    const primaryDeep = `rgb(${lerp(TEXT_DARK_SCENE_DEEP[0], TEXT_BRIGHT_SCENE_DEEP[0], t)}, ${lerp(TEXT_DARK_SCENE_DEEP[1], TEXT_BRIGHT_SCENE_DEEP[1], t)}, ${lerp(TEXT_DARK_SCENE_DEEP[2], TEXT_BRIGHT_SCENE_DEEP[2], t)})`;
-
-    // A single plain dark contact shadow — no light-colored halo. An
-    // earlier version paired this with a soft white glow (to help *dark*
-    // text stay legible against a dark patch of video), but that read as
-    // the text glowing, which was worse than the contrast problem it was
-    // solving. Simpler and calmer: one dark shadow, a bit stronger once
-    // the text itself is dark (against a brighter scene) since that's
-    // when a shadow does the most legibility work.
-    //
-    // This shadow is now the *only* thing carrying contrast against
-    // whatever the video actually looks like at a given moment — the text
-    // color itself just follows the clock (see HERO_TRANSITION_TAIL
-    // above), not the real frame, so unlike before there's no per-frame
-    // brightness read backing it up. Sized generously (dense, wide blur)
-    // as a static safety margin for that, rather than reacting live.
-    // Two dark layers, not one: a tight, near-solid one right at the
-    // glyph edge (does the real work against something as bright and
-    // uniform as, say, a full moon filling the frame) plus a wider, softer
-    // one for an ambient contact shadow. Still entirely dark/no halo —
-    // just dense enough now to hold up against the brightest realistic
-    // patch of video, not only an average one.
-    const shadowY = lerp(0, 2, t);
-    const tightBlur = 3;
-    const tightAlpha = Math.min(1, 0.8 + t * 0.2).toFixed(2);
-    const wideBlur = lerp(30, 20, t);
-    const wideAlpha = Math.min(1, 0.6 + t * 0.3).toFixed(2);
-    const shadow = `0 0 ${tightBlur}px rgba(5, 7, 13, ${tightAlpha}), 0 ${shadowY}px ${wideBlur}px rgba(5, 7, 13, ${wideAlpha})`;
-    const secondaryShadow = `0 0 ${Math.round(tightBlur * 0.85)}px rgba(5, 7, 13, ${(tightAlpha * 0.9).toFixed(2)}), 0 ${shadowY}px ${Math.round(wideBlur * 0.85)}px rgba(5, 7, 13, ${(wideAlpha * 0.9).toFixed(2)})`;
-
-    // Stroke stays dark-only too, for the same reason — a fixed, subtle
-    // edge, never a light one that could read as glowing.
-    const stroke = "rgba(5, 7, 13, 0.55)";
-
-    const root = document.documentElement.style;
-    root.setProperty("--hero-text-color", primary);
-    root.setProperty("--hero-text-color-deep", primaryDeep);
-    root.setProperty("--hero-text-color-secondary", secondary);
-    root.setProperty("--hero-text-shadow", shadow);
-    root.setProperty("--hero-text-shadow-secondary", secondaryShadow);
-    root.setProperty("--hero-text-stroke", stroke);
-
-    // --text-label is still driven by the video's actual brightness
-    // (unlike the hero vars above, its consumers are scattered all over
-    // whichever section is on screen, not one fixed spot a clock-based
-    // rule could target) — wrapped separately so a canvas failure here
-    // (e.g. a file:// origin) only leaves this one stale, rather than
-    // also skipping the hero update above.
     try {
       ctx.drawImage(video, 0, 0, SAMPLE_W, SAMPLE_H);
-      const { data: fullData } = ctx.getImageData(0, 0, SAMPLE_W, SAMPLE_H);
-      let fullTotal = 0;
-      const fullPixelCount = fullData.length / 4;
-      for (let i = 0; i < fullData.length; i += 4) {
-        fullTotal += fullData[i] * 0.299 + fullData[i + 1] * 0.587 + fullData[i + 2] * 0.114;
+      const { data } = ctx.getImageData(0, 0, SAMPLE_W, SAMPLE_H);
+      let total = 0;
+      const pixelCount = data.length / 4;
+      for (let i = 0; i < data.length; i += 4) {
+        total += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
       }
-      const rawFull = fullTotal / fullPixelCount / 255;
-      smoothedGeneral += (rawFull - smoothedGeneral) * SMOOTHING_GENERAL;
+      const raw = total / pixelCount / 255;
+      smoothed += (raw - smoothed) * SMOOTHING;
 
       // Overrides the --text-label token itself (declared on :root in
       // styles.css) rather than a separate variable, so every existing
       // `color: var(--text-label)` consumer picks this up automatically —
-      // no per-selector changes needed to opt in. No steepen() here,
-      // deliberately: that curve exaggerates small input changes into
-      // much bigger output swings near either end, which is exactly what
-      // made this feel like it was "glowing"/pulsing rather than calmly
-      // adapting — a plain linear map moves only as much as the (already
+      // no per-selector changes needed to opt in. Deliberately a plain
+      // linear map, not a steepening curve: a steeper curve exaggerates
+      // small input changes into much bigger output swings near either
+      // end, which read as the label "glowing"/pulsing rather than calmly
+      // adapting — this moves only as much as the (already
       // heavily-smoothed) brightness actually did.
-      const tGeneral = Math.min(Math.max(smoothedGeneral, 0), 1);
-      const label = `rgb(${lerp(LABEL_DARK_SCENE[0], LABEL_BRIGHT_SCENE[0], tGeneral)}, ${lerp(LABEL_DARK_SCENE[1], LABEL_BRIGHT_SCENE[1], tGeneral)}, ${lerp(LABEL_DARK_SCENE[2], LABEL_BRIGHT_SCENE[2], tGeneral)})`;
-      root.setProperty("--text-label", label);
+      const t = Math.min(Math.max(smoothed, 0), 1);
+      const label = `rgb(${lerp(LABEL_DARK_SCENE[0], LABEL_BRIGHT_SCENE[0], t)}, ${lerp(LABEL_DARK_SCENE[1], LABEL_BRIGHT_SCENE[1], t)}, ${lerp(LABEL_DARK_SCENE[2], LABEL_BRIGHT_SCENE[2], t)})`;
+      document.documentElement.style.setProperty("--text-label", label);
     } catch (err) {
       // Canvas readback blocked (e.g. some file:// origin quirks) — keep
       // using the last known --text-label rather than erroring the page.
